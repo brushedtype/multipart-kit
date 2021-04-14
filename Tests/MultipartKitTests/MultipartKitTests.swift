@@ -352,6 +352,27 @@ class MultipartTests: XCTestCase {
         let output = try MultipartParserOutputReceiver.collectOutput(data: data, boundary: "-")
         XCTAssertEqual(output.parts.count, 1)
     }
+
+    func testNestedEncode() throws {
+        struct Foo: Encodable {
+            struct Bar: Encodable {
+                let baz: Int
+            }
+            let bar: Bar
+        }
+
+        let encoder = FormDataEncoder()
+        let data = try encoder.encode(Foo(bar: .init(baz: 1)), boundary: "-")
+        let expected = """
+        ---\r
+        Content-Disposition: form-data; name="bar[baz]"\r
+        \r
+        1\r
+        -----\r\n
+        """
+
+        XCTAssertEqual(data, expected)
+    }
 }
 
 // https://stackoverflow.com/a/54524110/1041105
